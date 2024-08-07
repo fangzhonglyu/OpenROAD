@@ -774,7 +774,8 @@ class dbBoxOwner
     MPIN,
     TECH_VIA,
     REGION,
-    BPIN
+    BPIN,
+    PBOX
   };
 
   ///

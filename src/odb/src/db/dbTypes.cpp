@@ -1334,6 +1334,9 @@ dbBoxOwner::dbBoxOwner(const char* value)
   } else if (strcasecmp(value, "REGION") == 0) {
     _value = REGION;
 
+  } else if (strcasecmp(value, "PBOX") == 0) {
+    _value = PBOX;
+
   } else {
     // mismatch with noarg constructor: BLOCK
     _value = UNKNOWN;
@@ -1410,6 +1413,10 @@ const char* dbBoxOwner::getString() const
 
     case REGION:
       value = "REGION";
+      break;
+
+    case PBOX:
+      value = "PBOX";
       break;
   }
 
