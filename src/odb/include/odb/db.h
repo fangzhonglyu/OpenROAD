@@ -133,10 +133,13 @@ class dbBusPort;
 class dbDft;
 class dbGCellGrid;
 class dbGDSBoundary;
+class dbGDSBox;
 class dbGDSElement;
+class dbGDSNode;
 class dbGDSPath;
 class dbGDSSRef;
 class dbGDSStructure;
+class dbGDSText;
 class dbGlobalConnect;
 class dbGroup;
 class dbGuide;
@@ -7350,46 +7353,13 @@ class dbGDSElement : public dbObject
 
   int16_t getDatatype() const;
 
-  void setXy(std::vector<Point> xy);
+  // User Code Begin dbGDSElement
 
-  std::vector<Point> getXy() const;
+  std::vector<std::pair<std::int16_t, std::string>>& getPropattr();
 
-  void setPropattr(std::vector<std::pair<std::int16_t, std::string>> propattr);
+  std::vector<Point>& getXY();
 
-  std::vector<std::pair<std::int16_t, std::string>> getPropattr() const;
-};
-
-class dbGDSBoundary : public dbGDSElement
-{
- public:
-};
-
-class dbGDSPath : public dbGDSElement
-{
- public:
-  void setWidth(int width);
-
-  int getWidth() const;
-
-  void set_pathType(int16_t pathType);
-
-  int16_t get_pathType() const;
-};
-
-class dbGDSSRef : public dbGDSElement
-{
- public:
-  void set_sName(std::string sName);
-
-  std::string get_sName() const;
-
-  void set_sTrans(dbGDSSTrans sTrans);
-
-  dbGDSSTrans get_sTrans() const;
-
-  void set_colRow(std::pair<int, int> colRow);
-
-  std::pair<int, int> get_colRow() const;
+  // User Code End dbGDSElement
 };
 
 class dbGDSStructure : public dbObject
@@ -7404,6 +7374,16 @@ class dbGDSStructure : public dbObject
   static dbGDSStructure* create(dbGDSLib* lib, const char* name);
 
   static void destroy(dbGDSStructure* structure);
+
+  void removeElement(int index);
+
+  void addElement(dbGDSElement* element);
+
+  dbGDSElement* getElement(int index);
+
+  dbGDSElement* operator[](int index);
+
+  int getNumElements();
 
   // User Code End dbGDSStructure
 };
@@ -7505,6 +7485,8 @@ class dbGuide : public dbObject
   static dbGuide* getGuide(dbBlock* block, uint dbid);
 
   static void destroy(dbGuide* guide);
+
+  static dbSet<dbGuide>::iterator destroy(dbSet<dbGuide>::iterator& itr);
 
   // User Code End dbGuide
 };
@@ -10301,6 +10283,83 @@ class dbTechLayerWrongDirSpacingRule : public dbObject
 
   static void destroy(dbTechLayerWrongDirSpacingRule* rule);
   // User Code End dbTechLayerWrongDirSpacingRule
+};
+
+class dbGDSBoundary : public dbGDSElement
+{
+ public:
+};
+
+class dbGDSBox : public dbGDSElement
+{
+ public:
+  void set_boxType(int16_t boxType);
+
+  int16_t get_boxType() const;
+};
+
+class dbGDSNode : public dbGDSElement
+{
+ public:
+  void set_nodeType(int16_t nodeType);
+
+  int16_t get_nodeType() const;
+};
+
+class dbGDSPath : public dbGDSElement
+{
+ public:
+  void setWidth(int width);
+
+  int getWidth() const;
+
+  void set_pathType(int16_t pathType);
+
+  int16_t get_pathType() const;
+};
+
+class dbGDSSRef : public dbGDSElement
+{
+ public:
+  void set_sName(const std::string& sName);
+
+  std::string get_sName() const;
+
+  void set_sTrans(dbGDSSTrans sTrans);
+
+  dbGDSSTrans get_sTrans() const;
+
+  void set_colRow(std::pair<int16_t, int16_t> colRow);
+
+  std::pair<int16_t, int16_t> get_colRow() const;
+};
+
+class dbGDSText : public dbGDSElement
+{
+ public:
+  void set_textType(int16_t textType);
+
+  int16_t get_textType() const;
+
+  void setPresentation(dbGDSTextPres presentation);
+
+  dbGDSTextPres getPresentation() const;
+
+  void set_pathType(int16_t pathType);
+
+  int16_t get_pathType() const;
+
+  void setWidth(int width);
+
+  int getWidth() const;
+
+  void set_sTrans(dbGDSSTrans sTrans);
+
+  dbGDSSTrans get_sTrans() const;
+
+  void setText(const std::string& text);
+
+  std::string getText() const;
 };
 
 // Generator Code End ClassDefinition

@@ -138,33 +138,20 @@ int16_t dbGDSElement::getDatatype() const
   return obj->_datatype;
 }
 
-void dbGDSElement::setXy(std::vector<Point> xy)
-{
-  _dbGDSElement* obj = (_dbGDSElement*) this;
+// User Code Begin dbGDSElementPublicMethods
 
-  obj->_xy = xy;
-}
-
-std::vector<Point> dbGDSElement::getXy() const
+std::vector<Point>& dbGDSElement::getXY()
 {
   _dbGDSElement* obj = (_dbGDSElement*) this;
   return obj->_xy;
 }
 
-void dbGDSElement::setPropattr(
-    std::vector<std::pair<std::int16_t, std::string>> propattr)
-{
-  _dbGDSElement* obj = (_dbGDSElement*) this;
-
-  obj->_propattr = propattr;
-}
-
-std::vector<std::pair<std::int16_t, std::string>> dbGDSElement::getPropattr()
-    const
+std::vector<std::pair<std::int16_t, std::string>>& dbGDSElement::getPropattr()
 {
   _dbGDSElement* obj = (_dbGDSElement*) this;
   return obj->_propattr;
 }
 
+// User Code End dbGDSElementPublicMethods
 }  // namespace odb
    // Generator Code End Cpp

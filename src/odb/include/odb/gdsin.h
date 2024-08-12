@@ -7,6 +7,7 @@
 #include <endian.h>
 
 #include "odb/db.h"
+#include "odb/gdsUtil.h"
 
 namespace odb {
 
@@ -19,196 +20,141 @@ class dbGDSStructure;
 
 class GDSReader
 {
- private:
-  enum RecordType
-  {
-    HEADER = 0, BGNLIB, LIBNAME, UNITS, ENDLIB, BGNSTR, STRNAME, 
-    ENDSTR, BOUNDARY, PATH, SREF, AREF, TEXT, LAYER, DATATYPE, WIDTH,    
-    XY, ENDEL, SNAME, COLROW, NODE, TEXTTYPE, PRESENTATION, STRING,
-    STRANS, MAG, ANGLE, REFLIBS, FONTS, PATHTYPE, GENERATIONS, ATTRTABLE,
-    ELFLAGS, NODETYPE, PROPATTR, PROPVALUE, BOX, BOXTYPE, PLEX, TAPENUM, 
-    TAPECODE, FORMAT, MASK, ENDMASKS, INVALID_RT
-  };
-
-  inline RecordType toRecordType(uint8_t recordType)
-  {
-    if (recordType >= RecordType::INVALID_RT) {
-      throw std::runtime_error("Corrupted GDS, Invalid record type!");
-    }
-    return static_cast<RecordType>(recordType);
-  }
-
-  const char* recordNames[RecordType::INVALID_RT] = {
-      "HEADER",       "BGNLIB",     "LIBNAME",     "UNITS",     "ENDLIB",
-      "BGNSTR",       "STRNAME",    "ENDSTR",      "BOUNDARY",  "PATH",
-      "SREF",         "AREF",       "TEXT",        "LAYER",     "DATATYPE",
-      "WIDTH",        "XY",         "ENDEL",       "SNAME",     "COLROW",
-      "NODE",         "TEXTTYPE",   "PRESENTATION", "STRING",   "STRANS",
-      "MAG",          "ANGLE",      "REFLIBS",     "FONTS",     "PATHTYPE",
-      "GENERATIONS",  "ATTRTABLE",  "ELFLAGS",     "NODETYPE",  "PROPATTR",
-      "PROPVALUE",    "BOX",        "BOXTYPE",     "PLEX",      "TAPENUM",
-      "TAPECODE",     "FORMAT",     "MASK",        "ENDMASKS"};
-
-  enum DataType
-  {
-    NO_DATA = 0, BIT_ARRAY, INT_2, INT_4, REAL_4, REAL_8, ASCII_STRING, INVALID_DT
-  };
-
-  const size_t dataTypeSize[DataType::INVALID_DT] = { 1, 1, 2, 4, 4, 8, 1 };
-
-  inline DataType toDataType(uint8_t dataType)
-  {
-    if (dataType >= DataType::INVALID_DT) {
-      throw std::runtime_error("Corrupted GDS, Invalid data type!");
-    }
-    return static_cast<DataType>(dataType);
-  }
-
-
-  typedef struct
-  {
-    RecordType type;
-    DataType dataType;
-    uint16_t length;
-    std::string data8;
-    std::vector<int16_t> data16;
-    std::vector<int32_t> data32;
-    std::vector<double> data64;
-  } record_t;
-
  public: 
-  GDSReader(const std::string& filename) : lib(nullptr)
-  {
-    db = dbDatabase::create();
-    file.open(filename, std::ios::binary);
-    if (!file) {
-      throw std::runtime_error("Could not open file");
-    }
-  }
+  /**
+   * Constructor for GDSReader
+   * No operations are performed in the constructor
+   */
+  GDSReader();
 
-  ~GDSReader()
-  {
-    if (file.is_open()) {
-      file.close();
-    }
-  }
+  /**
+   * Destructor
+   * 
+   * Does not free the dbGDSLib objects, as they are owned by the database
+   */
+  ~GDSReader();
 
-  dbGDSLib* read_gds()
-  {
-    readRecord();
-    checkRType(RecordType::HEADER);
-  
-    processLib();
-    return lib;
-  }
+  /**
+   * Reads a GDS file and returns a dbGDSLib object
+   * 
+   * @param filename The path to the GDS file
+   * @param db The database to store the GDS data
+   * @return A dbGDSLib object containing the GDS data
+   * @throws std::runtime_error if the file cannot be opened, or if the GDS is corrupted
+   */
+  dbGDSLib* read_gds(const std::string& filename, dbDatabase* db);
 
  private:
-  std::ifstream file;
-  record_t r;
-  dbGDSLib* lib;
-  dbDatabase* db;
+  /** Current filestream */
+  std::ifstream _file;
+  /** Most recently read record */
+  record_t _r;
+  /** Current ODB Database */
+  dbDatabase* _db;
+  /** Current GDS Lib object */
+  dbGDSLib* _lib;
 
-  bool checkRType(RecordType expect)
-  {
-    if (r.type != expect) {
-      std::string error_msg = "Corrupted GDS, Expected: " + std::string(recordNames[static_cast<int>(expect)])
-       + " Got: " + std::string(recordNames[static_cast<int>(r.type)]);
-      throw std::runtime_error(error_msg);
-    }
-    return true;
-  }
+  /**
+   * Checks if the _r is the expected type
+   * 
+   * Currently functions as an assert statement for the record type.
+   * Used after readRecord() to check if the record type is the expected type.
+   * 
+   * @param expect The expected record type
+   * @return true if the record type is the expected type
+   * @throws std::runtime_error if the record type is not the expected type
+   */
+  bool checkRType(RecordType expect);
 
-  // expected size is the number of elements of the given type, not the size in bytes
-  bool checkRData(DataType eType, size_t eSize)
-  {
-    if (r.dataType != eType) {
-      std::string error_msg = "Corrupted GDS, Expected data type: " + std::to_string(eType)
-       + " Got: " + std::to_string(r.dataType);
-      throw std::runtime_error("Corrupted GDS, Unexpected data type!");
-    }
-  }
+  /**
+   * Checks if the _r is the expected data type
+   * 
+   * Currently functions as an assert statement for the data type.
+   * Used after readRecord() to check if the data type is the expected type.
+   * This function also checks if the data size is the expected size.
+   * 
+   * @param eType The expected data type
+   * @param eSize The expected data size
+   * @return true if the data type is the expected type
+   * @throws std::runtime_error if the data type is not the expected type
+   */
+  bool checkRData(DataType eType, size_t eSize);
 
-  double readDouble()
-  {
-    double value;
-    file.read(reinterpret_cast<char*>(&value), 8);
-    return htobe64(value);
-  }
+  /**
+   * Reads a real8 from _file
+   * 
+   * NOTE: real8 is not the same as double. This conversion is not lossless.
+   * @return The real8 read from _file, converted to a double
+   */
+  double readReal8();
 
-  uint32_t readInt32()
-  {
-    int32_t value;
-    file.read(reinterpret_cast<char*>(&value), 4);
-    return htobe32(value);
-  }
+  /** Reads an int32 from _file */
+  int32_t readInt32();
 
-  int16_t readInt16()
-  {
-    int16_t value;
-    file.read(reinterpret_cast<char*>(&value), 2);
-    return htobe16(value);
-  }
+  /** Reads an int16 from _file */
+  int16_t readInt16();
 
-  int8_t readInt8()
-  {
-    int8_t value;
-    file.read(reinterpret_cast<char*>(&value), 1);
-    return value;
-  }
+  /** Reads an int8 from _file */
+  int8_t readInt8();
 
-  bool readRecord(){
+  /**
+   * Reads a record from _file and stores it in _r
+   * 
+   * Reads the record type, data type, and length from _file.
+   * The data is then read into the appropriate data vector.
+   * 
+   * @return true if a record was read, false if the end of the file was reached
+   * @throws std::runtime_error if the record is corrupted
+   */
+  bool readRecord();
 
-    uint16_t recordLength = readInt16();
-    uint8_t recordType = readInt8();
-    uint8_t dataType = readInt8();
-
-    r.type = toRecordType(recordType);
-    r.dataType = toDataType(dataType);
-
-    printf("Record Length: %d Record Type: %s Data Type: %d\n", recordLength, recordNames[recordType], dataType);
-
-    if((recordLength-4) % dataTypeSize[r.dataType] != 0){
-      throw std::runtime_error("Corrupted GDS, Data size is not a multiple of data type size!");
-    }
-
-    r.length = recordLength;
-    int length = recordLength - 4;
-
-    if(dataType == DataType::INT_2){
-      r.data16.clear();
-      for(int i = 0; i < length; i += 2){
-        r.data16.push_back(readInt16());
-      }
-    }
-    else if(dataType == DataType::INT_4 || dataType == DataType::REAL_4){
-      r.data32.clear();
-      for(int i = 0; i < length; i += 4){
-        r.data32.push_back(readInt32());
-      }
-    }
-    else if(dataType == DataType::REAL_8){
-      r.data64.clear();
-      for(int i = 0; i < length; i += 8){
-        r.data64.push_back(readDouble());
-      }
-    }
-    else if(dataType == DataType::ASCII_STRING){
-      r.data8.clear();
-      for(int i = 0; i < length; i++){
-        r.data8.push_back(readInt8());
-      }
-    }
-    
-    if(file)
-      return true;
-    else
-      return false;
-  }
-
+  /** Parses a GDS Lib from the GDS file */
   bool processLib();
+
+  /** Parses a GDS Structure from the GDS file */
   bool processStruct();
+
+  /** 
+   * Parses a GDS Element from the GDS file 
+   * 
+   * @param str The GDS Structure to add the GDS Element to
+   */
   bool processElement(dbGDSStructure& str);
-  bool processBoundary(dbGDSStructure& str);
+
+  // Specific element types, same as processElement
+  dbGDSElement* processBoundary();
+  dbGDSElement* processPath();
+  dbGDSElement* processSRef();
+  dbGDSElement* processText();
+  dbGDSElement* processBox();
+  dbGDSElement* processNode();
+
+  /**
+   * Parses special attributes of a GDS Element
+   * 
+   * @param elem The GDS Element to add the attributes to
+   */
+  void processPropAttr(dbGDSElement* elem);
+
+  /**
+   * Parses the XY data of a GDS Element
+   * 
+   * @param elem The GDS Element to add the XY data to
+   * @return true if the XY data was successfully read
+   */
+  bool processXY(dbGDSElement* elem);
+
+  /** 
+   * Parses a GDS STrans from the GDS file 
+   * @return The parsed STrans
+   */
+  dbGDSSTrans processSTrans();
+
+  /** 
+   * Parses a GDS Text Presentation from the GDS file 
+   * @return The parsed STrans
+   */
+  dbGDSTextPres processTextPres();
 };
 
 }  // namespace odb

@@ -45,7 +45,6 @@ class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
-class _dbGDSElement;
 
 class _dbGDSStructure : public _dbObject
 {
@@ -68,17 +67,24 @@ class _dbGDSStructure : public _dbObject
   {
     std::string str = "STRUCTURE " + std::string(_name) + "\n";
     for (auto& e : _elements) {
-      str += e.to_string() + "\n";
+      str += e->to_string() + "\n";
     }
     return str;
   }
   // User Code End Methods
 
   char* _name;
-  dbVector<_dbGDSElement> _elements;
+  dbVector<_dbGDSElement*> _elements;
   dbId<_dbGDSStructure> _next_entry;
 };
 dbIStream& operator>>(dbIStream& stream, _dbGDSStructure& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbGDSStructure& obj);
+// User Code Begin General
+
+dbIStream& operator>>(dbIStream& stream, _dbGDSElement* obj);
+
+dbOStream& operator<<(dbOStream& stream, const _dbGDSElement* obj);
+
+// User Code End General
 }  // namespace odb
    // Generator Code End Header

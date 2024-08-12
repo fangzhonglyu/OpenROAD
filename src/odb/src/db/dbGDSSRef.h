@@ -58,10 +58,24 @@ class _dbGDSSRef : public _dbGDSElement
                    const char* field,
                    const _dbGDSSRef& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  // User Code Begin Methods
+
+  std::string to_string() override
+  {
+    if (_colRow.first == 1 && _colRow.second == 1) {
+      return "SREF " + _sName + " " + _sTrans.to_string();
+    } else {
+      return "AREF " + _sName + " " + _sTrans.to_string() + " COL "
+             + std::to_string(_colRow.first) + " ROW "
+             + std::to_string(_colRow.second);
+    }
+  }
+
+  // User Code End Methods
 
   std::string _sName;
   dbGDSSTrans _sTrans;
-  std::pair<int, int> _colRow;
+  std::pair<int16_t, int16_t> _colRow;
 };
 dbIStream& operator>>(dbIStream& stream, _dbGDSSRef& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbGDSSRef& obj);

@@ -36,10 +36,9 @@
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbGDSLib.h"
+#include "dbHashTable.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
-#include "dbHashTable.h"
-#include "dbHashTable.hpp"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 namespace odb {
@@ -128,6 +127,18 @@ char* dbGDSStructure::getName() const
 
 // User Code Begin dbGDSStructurePublicMethods
 
+dbIStream& operator>>(dbIStream& stream, _dbGDSElement* obj)
+{
+  stream >> *obj;
+  return stream;
+}
+
+dbOStream& operator<<(dbOStream& stream, const _dbGDSElement* obj)
+{
+  stream << *obj;
+  return stream;
+}
+
 dbGDSStructure* dbGDSStructure::create(dbGDSLib* lib_, const char* name_)
 {
   if (lib_->findGDSStructure(name_)) {
@@ -156,6 +167,32 @@ void dbGDSStructure::destroy(dbGDSStructure* structure)
 dbGDSLib* dbGDSStructure::getGDSLib()
 {
   return (dbGDSLib*) getImpl()->getOwner();
+}
+
+void dbGDSStructure::removeElement(int index)
+{
+  auto& elements = ((_dbGDSStructure*) this)->_elements;
+  elements.erase(elements.begin() + index);
+}
+
+void dbGDSStructure::addElement(dbGDSElement* element)
+{
+  ((_dbGDSStructure*) this)->_elements.push_back((_dbGDSElement*) element);
+}
+
+dbGDSElement* dbGDSStructure::getElement(int index)
+{
+  return (dbGDSElement*) ((_dbGDSStructure*) this)->_elements[index];
+}
+
+dbGDSElement* dbGDSStructure::operator[](int index)
+{
+  return getElement(index);
+}
+
+int dbGDSStructure::getNumElements()
+{
+  return ((_dbGDSStructure*) this)->_elements.size();
 }
 
 // User Code End dbGDSStructurePublicMethods
