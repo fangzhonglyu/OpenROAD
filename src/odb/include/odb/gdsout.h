@@ -79,6 +79,30 @@ class GDSWriter
    */
   void write_gds(dbGDSLib* lib, const std::string& filename);
 
+  /**
+   * Dumps the content of a dbGDSLib object to a yaml file
+   *
+   * @param lib The dbGDSLib object to dump
+   * @param filename The path to the output file
+   */
+  void dump_gds_content(dbGDSLib* lib, const std::string& filename);
+
+  /**
+   * Dumps the content of a dbGDSStruct object to a yaml file
+   *
+   * @param str The dbGDSLib object to dump
+   * @param filename The path to the output file
+   */
+  void dump_gds_struct(dbGDSStructure* str, std::ofstream& stream);
+
+  /**
+   * Dumps the content of a dbGDSElement object to a yaml file
+   *
+   * @param el The dbGDSLib object to dump
+   * @param filename The path to the output file
+   */
+  void dump_gds_element(dbGDSElement* el, std::ofstream& stream);
+
  private:
   /**
    * Calculates and sets the size of a record

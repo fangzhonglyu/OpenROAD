@@ -7385,6 +7385,9 @@ class dbGDSStructure : public dbObject
 
   int getNumElements();
 
+  std::map<std::pair<int16_t, int16_t>, std::vector<dbGDSElement*>>
+  getElementsByLayer();
+
   // User Code End dbGDSStructure
 };
 

@@ -212,7 +212,7 @@ bool GDSReader::processLib()
 
   readRecord();
   checkRType(RecordType::LIBNAME);
-  _lib->setLibname(_r.data8);
+  _lib->setLibname(_r.data8.c_str());
 
   readRecord();
   checkRType(RecordType::UNITS);
@@ -241,7 +241,7 @@ bool GDSReader::processStruct()
   readRecord();
   checkRType(RecordType::STRNAME);
 
-  std::string name = std::string(_r.data8.begin(), _r.data8.end());
+  std::string name = _r.data8.c_str();
 
   if (_lib->findGDSStructure(name.c_str()) != nullptr) {
     throw std::runtime_error("Corrupted GDS, Duplicate structure name");
@@ -290,7 +290,7 @@ void GDSReader::processPropAttr(dbGDSElement* elem)
 
     readRecord();
     checkRType(RecordType::PROPVALUE);
-    std::string value = _r.data8;
+    std::string value = _r.data8.c_str();
 
     elem->getPropattr().emplace_back(attr, value);
   }
@@ -390,7 +390,7 @@ dbGDSElement* GDSReader::processSRef()
 
   readRecord();
   checkRType(RecordType::SNAME);
-  sref->_sName = std::string(_r.data8.begin(), _r.data8.end());
+  sref->_sName = _r.data8.c_str();
 
   readRecord();
   if (_r.type == RecordType::STRANS) {
@@ -444,7 +444,7 @@ dbGDSElement* GDSReader::processText()
 
   readRecord();
   checkRType(RecordType::STRING);
-  text->_text = std::string(_r.data8.begin(), _r.data8.end());
+  text->_text = _r.data8.c_str();
 
   return (dbGDSElement*) text;
 }

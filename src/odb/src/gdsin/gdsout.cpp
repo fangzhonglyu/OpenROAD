@@ -69,7 +69,90 @@ void GDSWriter::write_gds(dbGDSLib* lib, const std::string& filename)
   if (_file.is_open()) {
     _file.close();
   }
+}
+
+void GDSWriter::dump_gds_element(dbGDSElement* el, std::ofstream& stream)
+{
+  stream << "      - ";
+  _dbGDSElement* _el = (_dbGDSElement*) el;
+  if (dynamic_cast<_dbGDSBoundary*>(_el) != nullptr) {
+    stream << "BOUNDARY: " << std::endl;
+  } else if (dynamic_cast<_dbGDSPath*>(_el) != nullptr) {
+    stream << "PATH: " << std::endl;
+    stream << "          PATHTYPE: " << ((_dbGDSPath*) _el)->_pathType
+           << std::endl;
+  } else if (dynamic_cast<_dbGDSSRef*>(_el) != nullptr) {
+    auto sref = (_dbGDSSRef*) el;
+    if (sref->_colRow.first == 1 && sref->_colRow.second == 1) {
+      stream << "SREF: " << std::endl;
+      stream << "          SNAME: " << sref->_sName << std::endl;
+    } else {
+      stream << "AREF: " << std::endl;
+      stream << "          COLROW: " << sref->_colRow.first << " "
+             << sref->_colRow.second << std::endl;
+    }
+  } else if (dynamic_cast<_dbGDSText*>(_el) != nullptr) {
+    stream << "TEXT: " << std::endl;
+    stream << "          STRING: " << ((_dbGDSText*) _el)->_text << std::endl;
+  } else if (dynamic_cast<_dbGDSBox*>(_el)) {
+    stream << "BOX: " << std::endl;
+    writeBox((dbGDSBox*) el);
+  } else if (dynamic_cast<_dbGDSNode*>(_el)) {
+    stream << "NODE: " << std::endl;
+    writeNode((dbGDSNode*) el);
+  } else {
+    throw std::runtime_error("Invalid / Unsupported element type");
+  }
+
+  stream << "          xy: ";
+  for (auto& xy : el->getXY()) {
+    stream << " (" << xy.x() << "," << xy.y() << ")";
+  }
+  stream << std::endl;
+}
+
+void GDSWriter::dump_gds_struct(dbGDSStructure* str, std::ofstream& stream)
+{
+  stream << "  - " << str->getName() << ":" << std::endl;
+  auto els = str->getElementsByLayer();
+
+  for (auto& l : els) {
+    stream << "    - layer " << l.first.first << "/" << l.first.second << ":"
+           << std::endl;
+    for (auto& el : l.second) {
+      dump_gds_element(el, stream);
+    }
+  }
+}
+
+void GDSWriter::dump_gds_content(dbGDSLib* lib, const std::string& filename)
+{
+  _lib = lib;
+  _file.open(filename, std::ios::binary);
+  if (!_file) {
+    throw std::runtime_error("Could not open file");
+  }
+
+  _file << "libname: " << lib->getLibname() << std::endl;
+  _file << "units: " << lib->getUnits().first << " " << lib->getUnits().second
+        << std::endl;
+  std::tm lastAccessed = lib->get_lastAccessed();
+  _file << "last_accessed: " << std::put_time(&lastAccessed, "%Y-%m-%d %X")
+        << std::endl;
+  std::tm lastModified = lib->get_lastModified();
+  _file << "last_modified: " << std::put_time(&lastModified, "%Y-%m-%d %X")
+        << std::endl;
+  _file << "structures: " << std::endl;
+  auto structures = lib->getGDSStructures();
+  for (auto s : structures) {
+    dump_gds_struct(s, _file);
+  }
+
   _lib = nullptr;
+
+  if (_file.is_open()) {
+    _file.close();
+  }
 }
 
 void GDSWriter::calcRecSize(record_t& r)

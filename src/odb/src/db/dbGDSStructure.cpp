@@ -195,6 +195,17 @@ int dbGDSStructure::getNumElements()
   return ((_dbGDSStructure*) this)->_elements.size();
 }
 
+std::map<std::pair<int16_t, int16_t>, std::vector<dbGDSElement*>>
+dbGDSStructure::getElementsByLayer()
+{
+  std::map<std::pair<int16_t, int16_t>, std::vector<dbGDSElement*>> layer_map;
+  for (int i = 0; i < getNumElements(); i++) {
+    dbGDSElement* el = getElement(i);
+    layer_map[std::make_pair(el->getLayer(), el->getDatatype())].push_back(el);
+  }
+  return layer_map;
+}
+
 // User Code End dbGDSStructurePublicMethods
 }  // namespace odb
    // Generator Code End Cpp
